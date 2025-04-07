@@ -52,8 +52,8 @@ RUN yes Y | sdkmanager --verbose --no_https ${ANDROID_SDK_PACKAGES}
 #============================================
 # Create required emulator
 #============================================
-ARG EMULATOR_NAME="nexus"
-ARG EMULATOR_DEVICE="Nexus 6"
+ARG EMULATOR_NAME="pixel_7"
+ARG EMULATOR_DEVICE="pixel_7"
 ENV EMULATOR_NAME=$EMULATOR_NAME
 ENV DEVICE_NAME=$EMULATOR_DEVICE
 RUN echo "no" | avdmanager --verbose create avd --force --name "${EMULATOR_NAME}" --device "${EMULATOR_DEVICE}" --package "${EMULATOR_PACKAGE}"
@@ -86,7 +86,9 @@ ENV APPIUM=./start_appium.sh
 #===================
 # Ports
 #===================
-ENV APPIUM_PORT=4723
+ENV APPIUM_PORT=4444
+ENV GRPC_PORT=5666
+ENV VNC_PASSWORD=selenoid
 
 #=========================
 # Copying Scripts to root
@@ -98,7 +100,22 @@ RUN chmod a+x start_vnc.sh && \
     chmod a+x start_appium.sh && \
     chmod a+x start_emu_headless.sh
 
+RUN chmod a+x entrypoint.sh
+
 #=======================
 # framework entry point
 #=======================
-CMD [ "/bin/bash" ]
+# Вырубаем проверку на вирутализацию
+RUN echo "hw.virt=off" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini
+# RUN mkdir -p "${WORK_PATH}/.config/Android Open Source Project" 
+# RUN cp Emulator.conf "${WORK_PATH}/.config/Android Open Source Project/Emulator.conf"
+
+# Отключаем системные сервисы
+# RUN adb shell pm disable com.android.systemui && \
+#     adb shell pm disable com.google.android.googlequicksearchbox
+
+
+RUN mkdir -p "/root/.config/Android Open Source Project" 
+RUN cp Emulator.conf "/root/.config/Android Open Source Project/Emulator.conf"
+
+ENTRYPOINT ["/entrypoint.sh"]
