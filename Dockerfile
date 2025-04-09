@@ -10,15 +10,50 @@ WORKDIR /
 #=============================
 SHELL ["/bin/bash", "-c"]   
 
-RUN apt update && apt install -y curl sudo wget unzip bzip2 libdrm-dev libxkbcommon-dev libgbm-dev libasound-dev libnss3 libxcursor1 libpulse-dev libxshmfence-dev xauth xvfb x11vnc fluxbox wmctrl libdbus-glib-1-2
-
+RUN apt update && apt install -y \
+    # Базовые утилиты
+    curl \        
+    sudo \         
+    wget \         
+    unzip \         
+    bzip2 \       
+    
+    # Графические библиотеки (критичны для эмулятора)
+    # Direct Rendering Manager (для GPU)
+    libdrm-dev \    
+    # Обработка раскладки клавиатуры
+    libxkbcommon-dev \ 
+    # Generic Buffer Management (графика)
+    libgbm-dev \ 
+    # Звуковая система ALSA (даже без аудио нужен)   
+    libasound-dev \ 
+     # Network Security Services (для WebView)
+    libnss3 \    
+     # Поддержка курсора мыши  
+    libxcursor1 \  
+    # PulseAudio (многие приложения требуют)
+    libpulse-dev \ 
+    # Sync между процессами X11 
+    libxshmfence-dev \ 
+    
+    # X11 и VNC
+    xauth \        
+    xvfb \         
+    x11vnc \       
+    fluxbox \      
+    wmctrl \      
+    
+    # Дополнительные зависимости
+    libdbus-glib-1-2 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 #==============================
 # Android SDK ARGS
 #==============================
 ARG ARCH="x86_64" 
-ARG TARGET="google_apis_playstore"  
-ARG API_LEVEL="34" 
-ARG BUILD_TOOLS="34.0.0"
+ARG TARGET="google_apis" 
+ARG API_LEVEL="33"
+ARG BUILD_TOOLS="33.0.0"
 ARG ANDROID_ARCH=${ANDROID_ARCH_DEFAULT}
 ARG ANDROID_API_LEVEL="android-${API_LEVEL}"
 ARG ANDROID_APIS="${TARGET};${ARCH}"
@@ -39,9 +74,11 @@ ENV DOCKER="true"
 # Install required Android CMD-line tools
 #============================================
 RUN wget https://dl.google.com/android/repository/${ANDROID_CMD} -P /tmp && \
-              unzip -d $ANDROID_SDK_ROOT /tmp/$ANDROID_CMD && \
-              mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/tools && cd $ANDROID_SDK_ROOT/cmdline-tools &&  mv NOTICE.txt source.properties bin lib tools/  && \
-              cd $ANDROID_SDK_ROOT/cmdline-tools/tools && ls
+    unzip -d $ANDROID_SDK_ROOT /tmp/$ANDROID_CMD && \
+    mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/tools && \
+    cd $ANDROID_SDK_ROOT/cmdline-tools && \
+    mv NOTICE.txt source.properties bin lib tools/ && \
+    cd $ANDROID_SDK_ROOT/cmdline-tools/tools && ls
 
 #============================================
 # Install required package using SDK manager
@@ -52,11 +89,15 @@ RUN yes Y | sdkmanager --verbose --no_https ${ANDROID_SDK_PACKAGES}
 #============================================
 # Create required emulator
 #============================================
-ARG EMULATOR_NAME="pixel_7"
-ARG EMULATOR_DEVICE="pixel_7"
+ARG EMULATOR_NAME="pixel_4"
+ARG EMULATOR_DEVICE="pixel_4"
 ENV EMULATOR_NAME=$EMULATOR_NAME
 ENV DEVICE_NAME=$EMULATOR_DEVICE
-RUN echo "no" | avdmanager --verbose create avd --force --name "${EMULATOR_NAME}" --device "${EMULATOR_DEVICE}" --package "${EMULATOR_PACKAGE}"
+
+RUN echo "no" | avdmanager --verbose create avd --force \
+    --name "${EMULATOR_NAME}" \
+    --device "${EMULATOR_DEVICE}" \
+    --package "${EMULATOR_PACKAGE}"
 
 #====================================
 # Install latest nodejs, npm & appium
@@ -98,22 +139,42 @@ COPY . /
 RUN chmod a+x start_vnc.sh && \
     chmod a+x start_emu.sh && \
     chmod a+x start_appium.sh && \
-    chmod a+x start_emu_headless.sh
+    chmod a+x start_emu_headless.sh 
 
 RUN chmod a+x entrypoint.sh
 
 #=======================
 # framework entry point
 #=======================
-# Вырубаем проверку на вирутализацию
-RUN echo "hw.virt=off" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini
-# RUN mkdir -p "${WORK_PATH}/.config/Android Open Source Project" 
-# RUN cp Emulator.conf "${WORK_PATH}/.config/Android Open Source Project/Emulator.conf"
+ENV GPU_MODE=swiftshader_indirect
+ENV RAM_SIZE=2048
+ENV CPU_SIZE=2
 
-# Отключаем системные сервисы
-# RUN adb shell pm disable com.android.systemui && \
-#     adb shell pm disable com.google.android.googlequicksearchbox
 
+# Установка simplelauncher
+RUN mkdir -p /opt/app && \
+    wget https://github.com/SimpleMobileTools/Simple-Launcher/releases/download/5.1.1/launcher-fdroid-release.apk -O /opt/app/simple-launcher.apk && \
+    chmod 644 /opt/app/simple-launcher.apk
+RUN chmod a+x start_install_launcher.sh
+
+# Установка apk до запуска appium
+RUN chmod a+x start_install_apk.sh
+
+# Скрипт для перезапуска pixel launch
+RUN chmod a+x start_reboot_pixel_launcher.sh
+
+
+RUN echo "hw.ramSize=${RAM_SIZE}" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+    echo "vm.heapSize=256" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+    # echo "hw.gpu.mode=swiftshader_indirect" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+    echo "hw.gpu.enabled=yes" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+    echo "hw.keyboard=yes" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+    echo "hw.camera.back=none" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+    echo "hw.camera.front=none" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+    echo "hw.audioInput=no" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+    echo "hw.audioOutput=no" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+    echo "hw.device.hash2=MD5:2fa0e16c8cceb7d385183284107c0c88" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+    echo "net.dns1=8.8.8.8" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini 
 
 RUN mkdir -p "/root/.config/Android Open Source Project" 
 RUN cp Emulator.conf "/root/.config/Android Open Source Project/Emulator.conf"

@@ -1,0 +1,134 @@
+# Используем более легковесный образ с JDK 17 (18 может быть избыточен)
+FROM openjdk:17-jdk-slim
+
+LABEL maintainer="Amr Salem"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /
+
+#=============================
+# Install Dependencies 
+#=============================
+SHELL ["/bin/bash", "-c"]   
+
+# Установка только необходимых зависимостей (убраны лишние графические библиотеки)
+RUN apt update && apt install -y \
+    curl \
+    sudo \
+    wget \
+    unzip \
+    bzip2 \
+    libnss3 \
+    xvfb \
+    x11vnc \
+    fluxbox \
+    wmctrl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+#==============================
+# Android SDK ARGS
+#==============================
+# Переход на API 33 как более стабильную версию
+ARG ARCH="x86_64" 
+ARG TARGET="google_apis"  # Убрали playstore для уменьшения размера
+ARG API_LEVEL="33"  # Изменили с 34 на 33
+ARG BUILD_TOOLS="33.0.0"
+ARG ANDROID_ARCH=${ANDROID_ARCH_DEFAULT}
+ARG ANDROID_API_LEVEL="android-${API_LEVEL}"
+ARG ANDROID_APIS="${TARGET};${ARCH}"
+ARG EMULATOR_PACKAGE="system-images;${ANDROID_API_LEVEL};${ANDROID_APIS}"
+ARG PLATFORM_VERSION="platforms;${ANDROID_API_LEVEL}"
+ARG BUILD_TOOL="build-tools;${BUILD_TOOLS}"
+ARG ANDROID_CMD="commandlinetools-linux-11076708_latest.zip"
+ARG ANDROID_SDK_PACKAGES="${EMULATOR_PACKAGE} ${PLATFORM_VERSION} ${BUILD_TOOL} platform-tools emulator"
+
+#==============================
+# Set Environment Variables
+#==============================
+ENV ANDROID_SDK_ROOT=/opt/android
+ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/tools:$ANDROID_SDK_ROOT/cmdline-tools/tools/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/tools/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/build-tools/${BUILD_TOOLS}"
+ENV DOCKER="true"
+
+#============================================
+# Install Android Command Line Tools
+#============================================
+RUN wget https://dl.google.com/android/repository/${ANDROID_CMD} -P /tmp && \
+    unzip -d $ANDROID_SDK_ROOT /tmp/$ANDROID_CMD && \
+    mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/tools && \
+    cd $ANDROID_SDK_ROOT/cmdline-tools && \
+    mv NOTICE.txt source.properties bin lib tools/ && \
+    cd $ANDROID_SDK_ROOT/cmdline-tools/tools && ls
+
+#============================================
+# Install Android Packages
+#============================================
+RUN yes | sdkmanager --licenses && \
+    yes | sdkmanager --verbose --no_https ${ANDROID_SDK_PACKAGES}
+
+#============================================
+# Create Emulator with Optimized Configuration
+#============================================
+# Изменяем на Pixel 4 как более стабильный вариант
+ARG EMULATOR_NAME="pixel_4"
+ARG EMULATOR_DEVICE="pixel_4"
+ENV EMULATOR_NAME=$EMULATOR_NAME
+ENV DEVICE_NAME=$EMULATOR_DEVICE
+
+RUN echo "no" | avdmanager --verbose create avd --force \
+    --name "${EMULATOR_NAME}" \
+    --device "${EMULATOR_DEVICE}" \
+    --package "${EMULATOR_PACKAGE}"
+
+# Оптимизация конфигурации эмулятора
+# RUN echo "hw.ramSize=2048" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+#     echo "vm.heapSize=256" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+#     echo "hw.gpu.mode=swiftshader_indirect" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+#     echo "hw.gpu.enabled=yes" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+#     echo "hw.keyboard=yes" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+#     echo "hw.camera.back=none" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+#     echo "hw.camera.front=none" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini && \
+#     echo "hw.device.hash2=MD5:2fa0e16c8cceb7d385183284107c0c88" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini
+
+#====================================
+# Install Node.js and Appium
+#====================================
+RUN curl -sL https://deb.nodesource.com/setup_20.x | bash && \
+    apt-get install -y nodejs && \
+    npm install -g npm appium --unsafe-perm=true --allow-root && \
+    appium driver install uiautomator2 && \
+    npm cache clean --force && \
+    apt-get purge -y nodejs && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+#===================
+# Environment Variables
+#===================
+ENV EMU=./start_emu.sh
+ENV EMU_HEADLESS=./start_emu_headless.sh
+ENV VNC=./start_vnc.sh
+ENV APPIUM=./start_appium.sh
+ENV APPIUM_PORT=4444
+ENV GRPC_PORT=5666
+ENV VNC_PASSWORD=selenoid
+ENV DISPLAY=:1
+
+#=========================
+# Copy and Configure Scripts
+#=========================
+COPY . /
+
+RUN chmod a+x start_vnc.sh start_emu.sh start_appium.sh start_emu_headless.sh entrypoint.sh && \
+    mkdir -p "/root/.config/Android Open Source Project" && \
+    cp Emulator.conf "/root/.config/Android Open Source Project/Emulator.conf"
+
+#=======================
+# Entrypoint Configuration
+#=======================
+# Добавляем healthcheck для мониторинга состояния эмулятора
+HEALTHCHECK --interval=30s --timeout=30s --start-period=1m --retries=3 \
+    CMD adb shell getprop sys.boot_completed | grep 1 || exit 1
+
+ENTRYPOINT ["/entrypoint.sh"]
