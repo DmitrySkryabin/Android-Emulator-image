@@ -13,7 +13,7 @@ grpc_port=${GRPC_PORT}
 function wait_emulator_to_be_ready() {
   emulator_name=${EMULATOR_NAME}
   # nohup emulator -avd "${emulator_name}" -no-boot-anim -no-snapshot -gpu swiftshader_indirect -skin ${SKIN} -dpi-device 300 -grpc ${grpc_port} &
-  nohup emulator -avd "${emulator_name}" -no-boot-anim -no-snapshot -gpu guest -skin ${SKIN} -dpi-device 300 -grpc ${grpc_port} &
+  nohup emulator -avd "${emulator_name}" -cores ${CPU_SIZE}  -no-boot-anim -no-snapshot -gpu ${GPU_MODE}  -grpc ${grpc_port} &
   # nohup emulator -avd "${emulator_name}" -no-boot-anim -gpu off -grpc ${grpc_port} &
   printf "${G}==>  ${BL}Emulator has ${YE}${EMULATOR_NAME} ${BL}started in headed mode! ${G}<==${NC}""\n"
 }

@@ -52,6 +52,14 @@ launch_window_manager() {
             exit 1
         fi
     done
+
+    # Установка фона рабочего стола
+    if [ -n "${BACKGROUND_IMAGE}" ]; then
+        xsetroot -solid grey # Установите однотонный фон (можно изменить)
+        feh --bg-scale "${BACKGROUND_IMAGE}" # Установите изображение фона
+    else
+        echo "${G_LOG_W} No background image specified."
+    fi
 }
 
 run_vnc_server() {

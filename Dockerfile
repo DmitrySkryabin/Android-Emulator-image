@@ -98,21 +98,16 @@ COPY . /
 RUN chmod a+x start_vnc.sh && \
     chmod a+x start_emu.sh && \
     chmod a+x start_appium.sh && \
-    chmod a+x start_emu_headless.sh
+    chmod a+x start_emu_headless.sh && \
+    chmod a+x start_pixel_launch_monitor.sh
 
 RUN chmod a+x entrypoint.sh
 
-#=======================
-# framework entry point
-#=======================
-# Вырубаем проверку на вирутализацию
-RUN echo "hw.virt=off" >> /root/.android/avd/${EMULATOR_DEVICE}.avd/config.ini
-# RUN mkdir -p "${WORK_PATH}/.config/Android Open Source Project" 
-# RUN cp Emulator.conf "${WORK_PATH}/.config/Android Open Source Project/Emulator.conf"
+# Устанавливаем фоновое изображение
+ENV BACKGROUND_IMAGE="background.jpg"
 
-# Отключаем системные сервисы
-# RUN adb shell pm disable com.android.systemui && \
-#     adb shell pm disable com.google.android.googlequicksearchbox
+ENV CPU_SIZE=2
+ENV GPU_MODE=swiftshader_indirect
 
 
 RUN mkdir -p "/root/.config/Android Open Source Project" 
