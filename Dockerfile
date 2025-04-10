@@ -146,7 +146,7 @@ RUN chmod a+x entrypoint.sh
 #=======================
 # framework entry point
 #=======================
-ENV GPU_MODE=swiftshader_indirect
+ENV GPU_MODE=guest
 ENV RAM_SIZE=2048
 ENV CPU_SIZE=2
 
