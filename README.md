@@ -1,106 +1,24 @@
-# Android emulator Image
+# Browser Images
+[![Build Status](https://github.com/aerokube/images/workflows/build/badge.svg)](https://github.com/aerokube/images/actions?query=workflow%3Abuild)
+[![Release](https://img.shields.io/github/release/aerokube/images.svg)](https://github.com/aerokube/images/releases/latest)
 
-The use of this Docker image simplifies the process of running an Android emulator within a Docker container. This can be achieved through a few basic commands or by utilizing a simple Docker compose file. The image includes the latest version of the Android SDK, as well as the Appium server, which allows for the execution of mobile automation tests.
-  for more info --> https://medium.com/@Amr.sa/running-android-emulator-in-a-docker-container-19ecb68e1909
+**UNMAINTAINED**. Consider https://aerokube.com/moon/latest as alternative.
 
-# Feature
+This repository contains [Docker](http://docker.com/) build files to be used for [Selenoid](http://github.com/aerokube/selenoid) and [Moon](http://github.com/aerokube/moon) projects. You can find prebuilt images [here](https://hub.docker.com/u/selenoid/).
 
-- Run android emulator in headless or in headed mode (through VNC)
-- Support Appium driver
-- Come with the latest JDK lts.
+## Download Statistics
 
+### Firefox: [![Firefox Docker Pulls](https://img.shields.io/docker/pulls/selenoid/firefox.svg)](https://hub.docker.com/r/selenoid/firefox)
 
-# Setup
+### Chrome: [![Chrome Docker Pulls](https://img.shields.io/docker/pulls/selenoid/chrome.svg)](https://hub.docker.com/r/selenoid/chrome)
 
-## Manual execution
+### Opera: [![Opera Docker Pulls](https://img.shields.io/docker/pulls/selenoid/opera.svg)](https://hub.docker.com/r/selenoid/opera)
 
-Down below is the list of the main scripts to launch the relevant service, certain environment variables should be passed during starting the container.
+### Android: [![Android Docker Pulls](https://img.shields.io/docker/pulls/selenoid/android.svg)](https://hub.docker.com/r/selenoid/android)
 
-1.  **build the docker image :** 
+## Building Images
 
-        docker build -t android-emulator .
+Moved to: http://aerokube.com/images/latest/#_building_images
 
-    OR for customized image
-
-        docker build \
-        --build-arg ARCH=x86_64  \
-        --build-arg TARGET=google_apis_playstore\
-        --build-arg API_LEVEL=31 \
-        --build-arg BUILD_TOOLS=31.0.0 \
-        --build-arg EMULATOR_DEVICE="Nexus 6" \
-        --build-arg EMULATOR_NAME=nexus \
-        -t my-android-image .  
-    
-2.  **Start your container:**
-
-        docker run -it --privileged -d -p 5900:5900 --name androidContainer --privileged android-emulator  
-
-3.  **Launch the appium session :**
-
-        docker exec --privileged -it androidContainer bash -c "appium -p 5900"
-
-     OR
-
-        docker exec --privileged  -it androidContainer bash -c "./start_appium.sh"
-
- 
-4.  **Start the emulator in headless mode :**
-   
-        docker exec --privileged -it -e EMULATOR_TIMEOUT=300 androidContainer bash -c "./start_emu_headless.sh"
-
-5.  **Starting VNC server:**
-
-        docker exec --privileged -it androidContainer bash -c "./start_vnc.sh"
-
-
-
-## Launch emulator in headed mode
-
-
-1.  **The following command must be used to initiate the Docker container:**
-
-        docker run -it -d -p 5900:5900 --name androidContainer -e VNC_PASSWORD=password --privileged android-emulator
-
-2.  **Instantiate the VNC service by running:**
-
-        docker exec --privileged -it androidContainer bash -c "./start_vnc.sh"
-
-3.  **Connect to the VNC server via remmina or any VNC viewer, on:**
-          
-        localhost:5900
-    
-4.  **Open dash terminal in vnc viewer and right the following command:** 
-
-        #: ./start_emu.sh
- 
-<a href="https://ibb.co/pPq0bn9"><img src="https://i.ibb.co/pPq0bn9/vnc.png" alt="vnc" border="0"></a>       <a href="https://ibb.co/cJB6qkX"><img src="https://i.ibb.co/cJB6qkX/gif.gif"       alt="gif" border="0"></a>
-    
-*Note: 
-  - The "start_emu.sh" script will start the emulator in a visible mode, therefore it should not be used for integration with a pipeline such as GitHub Actions or CircleCI. Instead, use the "start_emu_headless.sh" script.
-  - By default, Running emulator is 'Nexus 6' (emulator name: nexus) (Android 13)
-  - It is not necessary to launch all services in the docker-compose file, instead you should only enable the services you require, and comment out the others in the file.
-
-
-## Using Docker-compose
-
-The Docker Compose file simplifies the process of starting the service. It includes multiple services, such as launching the emulator with the Appium instance or launching the VNC server. You have the flexibility to enable or disable any service based on your needs.
-    
-    docker compose up
-
-## Environments
-
-**When manually starting the container, ensure to set the necessary environment variables for proper operation** 
-
-| Environments      | Description                                                                                              | Required          |  Service   |
-| ----------------- | -------------------------------------------------------------------------------------------------------- | ----------------- | -----------|
-| APPIUM_PORT       | Port for the appium instance                                                                             | optional          | Android    |
-| VNC_PASSWORD      | Password needed to connect to VNC Server                                                                 | optional          | VNC        |
-| OSTYPE            | linux or macos/darwin                                                                                    | optional          | Android    |
-| EMULATOR_TIMEOUT  | emulator booting up timeoue, default 240 second                                                          | optional          | Android    |
-| HW_ACCEL_OVERRIDE | Pass aceel options e.g "-accel on" or "-aceel off"                                                       | optional          | Android    
-
-## Kill the container
-
--   **Run the following command to kill and remove the container:** 
-
-        docker rm -f androidContainer
+## Image information
+Moved to: http://aerokube.com/images/latest/#_browser_image_information

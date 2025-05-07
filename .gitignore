@@ -1,5 +1,10 @@
-test-compose.yml
+*.iml
 .idea
-coverage
-useful
-nohup.out
+*.deb
+*.bak
+images
+pkged.go
+
+.DS_Store
+
+selenium/barrier/barrier
