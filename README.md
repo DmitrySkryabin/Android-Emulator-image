@@ -1,3 +1,7 @@
+# TODO
+ Обновить или посмотреть лицензию нормально
+ Написюкать благодарности
+
 # Browser Images
 [![Build Status](https://github.com/aerokube/images/workflows/build/badge.svg)](https://github.com/aerokube/images/actions?query=workflow%3Abuild)
 [![Release](https://img.shields.io/github/release/aerokube/images.svg)](https://github.com/aerokube/images/releases/latest)
