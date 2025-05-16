@@ -6,8 +6,6 @@ RED='\033[0;31m'
 YE='\033[1;33m'
 NC='\033[0m' # No Color
 
-DEFAULT_CAPABILITIES='"appium:autoGrantPermissions": true'
-
 function start_appium () {
     if [ "$APPIUM_PORT" == "" ] || [ "$APPIUM_PORT" == null ];
     then
@@ -17,9 +15,7 @@ function start_appium () {
     else
     printf "${G}==>  ${BL}Instance will run on ${YE}${APPIUM_PORT} ${G}<==${NC}""\n"
     sleep 0.5
-    adb wait-for-device shell getprop sys.boot_completed
-    # sleep 30
-    appium -p $APPIUM_PORT --default-capabilities "{$DEFAULT_CAPABILITIES}"
+    appium -p $APPIUM_PORT
     fi
 };
 

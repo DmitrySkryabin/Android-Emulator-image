@@ -7,9 +7,6 @@ BL='\033[0;34m'
 G='\033[0;32m'
 NC='\033[0m' # No Color
 
-
-BACKGROUND_IMAGE="background.jpg"
-
 main() {
     launch_xvfb
     launch_window_manager
@@ -55,14 +52,6 @@ launch_window_manager() {
             exit 1
         fi
     done
-
-    # Установка фона рабочего стола
-    if [ -n "${BACKGROUND_IMAGE}" ]; then
-        xsetroot -solid grey # Установите однотонный фон (можно изменить)
-        feh --bg-scale "${BACKGROUND_IMAGE}" # Установите изображение фона
-    else
-        echo "${G_LOG_W} No background image specified."
-    fi
 }
 
 run_vnc_server() {
@@ -82,7 +71,7 @@ run_vnc_server() {
         echo "${G_LOG_W} The VNC server will NOT ask for a password."
     fi
 
-    x11vnc -ncache_cr -display ${DISPLAY} -forever ${passwordArgument}  &
+    x11vnc -ncache_cr -display ${DISPLAY} -forever ${passwordArgument} &
     wait $!
 }
 
