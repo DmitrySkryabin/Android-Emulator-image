@@ -9,13 +9,13 @@ NC='\033[0m' # No Color
 function start_appium () {
     if [ "$APPIUM_PORT" == "" ] || [ "$APPIUM_PORT" == null ];
     then
-    printf "${G}==>  ${YE}No port provided, instance will run on 4723 ${G}<==${NC}""\n"
+    printf "${G}==>  ${YE}No port provided, Appium will run on 4723 ${G}<==${NC}""\n"
     sleep 0.5
     appium 
     else
-    printf "${G}==>  ${BL}Instance will run on ${YE}${APPIUM_PORT} ${G}<==${NC}""\n"
+    printf "${G}==>  ${BL}Appium will run on ${YE}${APPIUM_PORT} ${G}<==${NC}""\n"
     sleep 0.5
-    appium -p $APPIUM_PORT
+    appium -p $APPIUM_PORT --log-level error --log-timestamp 
     fi
 };
 

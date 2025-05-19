@@ -6,18 +6,26 @@ RED='\033[0;31m'
 YE='\033[1;33m'
 NC='\033[0m' # No Color
 
-function wait_emulator_to_be_ready() {
+WIDHT=864
+HEIGHT=1824
+DPI=400
+
+function run_emulator() {
   emulator_name=${EMULATOR_NAME}
-  emulator -avd "${emulator_name}" -no-boot-anim -gpu off
-  printf "${G}==>  ${BL}Emulator has ${YE}${EMULATOR_NAME} ${BL}started in headed mode! ${G}<==${NC}""\n"
+  echo "hw.lcd.width=${WIDHT}" >> /root/.android/avd/${EMULATOR_NAME}.avd/config.ini && \
+  echo "hw.lcd.height=${HEIGHT}" >> /root/.android/avd/${EMULATOR_NAME}.avd/config.ini && \
+  echo "hw.lcd.density=${DPI}" >> /root/.android/avd/${EMULATOR_NAME}.avd/config.ini
+  emulator \
+    -avd "${emulator_name}" \
+    -no-boot-anim \
+    -no-audio \
+    -memory 6144 \
+    -gpu host \
+    2>&1 | grep -v "libunwind" &
+  printf "${G}==>  ${BL}Emulator has ${YE}${EMULATOR_NAME} ${BL}started in headed mode! ${NC}\n"
 }
 
-function disable_animation() {
-  adb shell "settings put global window_animation_scale 0.0"
-  adb shell "settings put global transition_animation_scale 0.0"
-  adb shell "settings put global animator_duration_scale 0.0"
-}
+DISPLAY=:1
+export DISPLAY
 
-wait_emulator_to_be_ready
-sleep 1
-disable_animation
+run_emulator

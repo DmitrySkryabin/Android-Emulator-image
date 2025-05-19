@@ -10,13 +10,38 @@ WORKDIR /
 #=============================
 SHELL ["/bin/bash", "-c"]   
 
-RUN apt update && apt install -y curl sudo wget unzip bzip2 libdrm-dev libxkbcommon-dev libgbm-dev libasound-dev libnss3 libxcursor1 libpulse-dev libxshmfence-dev xauth xvfb x11vnc fluxbox wmctrl libdbus-glib-1-2
+RUN apt update && apt install -y --no-install-recommends \
+    curl \
+    sudo \
+    wget \
+    unzip \
+    bzip2 \
+    libunwind-dev \
+    libunwind8 \
+    libdrm-dev \
+    libxkbcommon-dev \
+    libgbm-dev \
+    libasound-dev \
+    libnss3 \
+    libxcursor1 \
+    libpulse-dev \
+    libxshmfence-dev \
+    xauth \
+    xvfb \
+    x11vnc \
+    fluxbox \
+    wmctrl \
+    x11-utils \
+    feh \
+    libdbus-glib-1-2 && \
+        apt-get clean && \
+        rm -Rf /tmp/* && rm -Rf /var/lib/apt/lists/*
 
 #==============================
 # Android SDK ARGS
 #==============================
 ARG ARCH="x86_64" 
-ARG TARGET="google_apis_playstore"  
+ARG TARGET="google_apis"  
 ARG API_LEVEL="34" 
 ARG BUILD_TOOLS="34.0.0"
 ARG ANDROID_ARCH=${ANDROID_ARCH_DEFAULT}
@@ -39,24 +64,19 @@ ENV DOCKER="true"
 # Install required Android CMD-line tools
 #============================================
 RUN wget https://dl.google.com/android/repository/${ANDROID_CMD} -P /tmp && \
-              unzip -d $ANDROID_SDK_ROOT /tmp/$ANDROID_CMD && \
-              mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/tools && cd $ANDROID_SDK_ROOT/cmdline-tools &&  mv NOTICE.txt source.properties bin lib tools/  && \
-              cd $ANDROID_SDK_ROOT/cmdline-tools/tools && ls
-
-#============================================
-# Install required package using SDK manager
-#============================================
-RUN yes Y | sdkmanager --licenses 
-RUN yes Y | sdkmanager --verbose --no_https ${ANDROID_SDK_PACKAGES} 
+    unzip -d $ANDROID_SDK_ROOT /tmp/$ANDROID_CMD && \
+    mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/tools && cd $ANDROID_SDK_ROOT/cmdline-tools &&  mv NOTICE.txt source.properties bin lib tools/  && \
+    cd $ANDROID_SDK_ROOT/cmdline-tools/tools && ls && \
+    yes Y | sdkmanager --licenses && \
+    yes Y | sdkmanager --verbose --no_https ${ANDROID_SDK_PACKAGES} 
 
 #============================================
 # Create required emulator
 #============================================
-ARG EMULATOR_NAME="nexus"
-ARG EMULATOR_DEVICE="Nexus 6"
+ARG EMULATOR_NAME="mobile14"
 ENV EMULATOR_NAME=$EMULATOR_NAME
 ENV DEVICE_NAME=$EMULATOR_DEVICE
-RUN echo "no" | avdmanager --verbose create avd --force --name "${EMULATOR_NAME}" --device "${EMULATOR_DEVICE}" --package "${EMULATOR_PACKAGE}"
+RUN echo "no" | avdmanager --verbose create avd --force --name "${EMULATOR_NAME}" --package "${EMULATOR_PACKAGE}"
 
 #====================================
 # Install latest nodejs, npm & appium
@@ -86,19 +106,22 @@ ENV APPIUM=./start_appium.sh
 #===================
 # Ports
 #===================
-ENV APPIUM_PORT=4723
+ENV APPIUM_PORT=4444
+ENV VNC_PASSWORD=selenoid
 
 #=========================
 # Copying Scripts to root
 #=========================
 COPY . /
 
-RUN chmod a+x start_vnc.sh && \
-    chmod a+x start_emu.sh && \
-    chmod a+x start_appium.sh && \
-    chmod a+x start_emu_headless.sh
+# Добавляем Emulator.conf чтобы убрать предупреждение о нестед вирутализации
+RUN mkdir -p "/root/.config/Android Open Source Project" && \
+    cp Emulator.conf "/root/.config/Android Open Source Project/Emulator.conf"
+
+# Устанавливаем фоновое изображение
+ENV BACKGROUND_IMAGE="background.jpg"
 
 #=======================
 # framework entry point
 #=======================
-CMD [ "/bin/bash" ]
+ENTRYPOINT ["/entrypoint.sh"]

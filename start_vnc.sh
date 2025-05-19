@@ -22,9 +22,9 @@ launch_xvfb() {
     local timeout=${XVFB_TIMEOUT:-5}
 
     # Start and wait for either Xvfb to be fully up or we hit the timeout.
-    Xvfb ${DISPLAY} -screen ${screen} ${resolution} &
+    Xvfb ${DISPLAY} -screen ${screen} ${resolution} >/dev/null 2>&1 &
     local loopCount=0
-    until xdpyinfo -display ${DISPLAY} > /dev/null 2>&1
+    until xdpyinfo -display ${DISPLAY} >/dev/null 2>&1
     do
         loopCount=$((loopCount+1))
         sleep 1
@@ -40,7 +40,7 @@ launch_window_manager() {
     local timeout=${XVFB_TIMEOUT:-5}
 
     # Start and wait for either fluxbox to be fully up or we hit the timeout.
-    fluxbox &
+    fluxbox > /dev/null 2>&1 &
     local loopCount=0
     until wmctrl -m > /dev/null 2>&1
     do
@@ -52,6 +52,13 @@ launch_window_manager() {
             exit 1
         fi
     done
+
+    # Установка фона рабочего стола
+    if [ -n "${BACKGROUND_IMAGE}" ]; then
+        feh --bg-scale "${BACKGROUND_IMAGE}" # Установите изображение фона
+    else
+        echo "${G_LOG_W} No background image specified."
+    fi
 }
 
 run_vnc_server() {
@@ -71,8 +78,8 @@ run_vnc_server() {
         echo "${G_LOG_W} The VNC server will NOT ask for a password."
     fi
 
-    x11vnc -ncache_cr -display ${DISPLAY} -forever ${passwordArgument} &
-    wait $!
+    x11vnc  -ncache_cr -display ${DISPLAY} -forever ${passwordArgument} >/dev/null 2>&1 &
+    wait $! 
 }
 
 
