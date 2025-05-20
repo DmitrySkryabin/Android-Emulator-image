@@ -10,7 +10,7 @@ NC='\033[0m' # No Color
 function check_current_focus() {
   printf "${BL}==> Checking emulator running activity ${NC}\n"
   target="com.google.android.apps.nexuslauncher.NexusLauncherActivity"
-  error_target="Application Not Responding: com.android.systemui}"
+  error_target="Application Not Responding"
 
   while true; do
     result=$(adb shell dumpsys window 2>/dev/null | grep -i mCurrentFocus)
