@@ -7,6 +7,40 @@ YE='\033[1;33m'
 NC='\033[0m' # No Color
 
 
+draw_framed_message() {
+    local color="$1"
+    local content="$2"
+
+    # Разбиваем текст по строкам
+    mapfile -t lines < <(printf "%b" "$content")
+
+    local max_len=0
+    local clean_line
+
+    for line in "${lines[@]}"; do
+        # Удаляем ANSI коды для подсчета визуальной длины
+        clean_line=$(echo -e "$line" | sed -r 's/\x1B\[[0-9;]*[a-zA-Z]//g')
+        local current_len=${#clean_line}
+        if (( current_len > max_len )); then
+            max_len=$current_len
+        fi
+    done
+
+    local frame_line=""
+    for (( i=0; i<max_len+4; i++ )); do
+        frame_line+="═"
+    done
+
+    printf "${color}╔%s╗${NC}\n" "$frame_line"
+    for line in "${lines[@]}"; do
+        clean_line=$(echo -e "$line" | sed -r 's/\x1B\[[0-9;]*[a-zA-Z]//g')
+        local padding=$((max_len - ${#clean_line}))
+        local spaces=$(printf '%*s' "$padding")
+        printf "${color}║ ${line}${spaces} ║${NC}\n"
+    done
+    printf "${color}╚%s╝${NC}\n" "$frame_line"
+}
+
 function check_current_focus() {
   printf "${BL}==> Checking emulator running activity ${NC}\n"
   target="com.google.android.apps.nexuslauncher.NexusLauncherActivity"
@@ -16,14 +50,10 @@ function check_current_focus() {
     result=$(adb shell dumpsys window 2>/dev/null | grep -i mCurrentFocus)
 
     if [[ $result == *"$error_target"* ]]; then
-      printf "${RED}==>  Activity is NOT OKEY: ${NC}\n"
-      printf "${RED}Current activity: $result ${NC}\n"
+      # Используем переменную для многострочного сообщения с \n
+      local MESSAGE_ERROR="==> Activity is NOT OKEY!\nCurrent activity: $result"
+      draw_framed_message "${RED}" "$MESSAGE_ERROR"
       adb shell input keyevent KEYCODE_HOME
-      printf "${YE}==> Menu button is pressed ${NC}\n"
-
-    else
-      printf "${G}==> Activity is OKEY: ${NC}\n"
-      printf "Current activity: $result\n"
     fi
     sleep 10
   done
@@ -85,10 +115,14 @@ sleep 5
 check_emulator_status
 sleep 5
 disable_animation
+sleep 5
+adb logcat -v tag TestLog:V *:S 2>&1 &
 check_current_focus &
 CHECK_CURRENT_FOCUS_PID=$!
 ./start_appium.sh &
 APPIUM_PID=$!
+sleep 2
+printf "${G}STARTED COLLECTING LOGS FROM TESTS!${NC}"
 
 
 clean() {

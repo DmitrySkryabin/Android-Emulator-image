@@ -15,7 +15,7 @@ function start_appium () {
     else
     printf "${G}==>  ${BL}Appium will run on ${YE}${APPIUM_PORT} ${G}<==${NC}""\n"
     sleep 0.5
-    appium -p $APPIUM_PORT --log-level error --log-timestamp 
+    appium -p $APPIUM_PORT --allow-insecure adb_shell --log-level error --log-timestamp 
     fi
 };
 
